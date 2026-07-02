@@ -6,7 +6,7 @@ output:
     latex_engine: xelatex
     number_sections: false
     reference_docx: jas_template.docx
-bibliography: "`r rbbt::bbt_write_bib('mybibfile.bib', overwrite = TRUE)`"
+bibliography: mybibfile.bib
 csl: maturitas.csl
 date: '`r Sys.Date()`'
 ---

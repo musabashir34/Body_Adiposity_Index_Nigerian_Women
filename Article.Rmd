@@ -7,7 +7,7 @@ output:
     number_sections: false
     reference_docx: jas_template.docx
 bibliography: "`r rbbt::bbt_write_bib('mybibfile.bib', overwrite = TRUE)`"
-csl: apa.csl
+csl: american-medical-association.csl
 date: '`r Sys.Date()`'
 ---
 

@@ -4,7 +4,7 @@
 
 Data and R code for the article:
 
-> Asuku AY, Bashir MA, Muhammed J. **Body Adiposity Index Outperforms Waist Circumference and Waist-to-Height Ratio in Identifying Dysglycemia Among Hausa Women in Northern Nigeria.** *Scientific African* (under review).
+> Asuku AY, Bashir MA, Muhammed J. **Body Adiposity Index Outperforms Waist Circumference and Waist-to-Height Ratio in Identifying Dysglycemia Among Hausa Women in Northern Nigeria.**
 
 The code reproduces every table, figure and number reported in the manuscript and its supplementary material from the de-identified dataset.
 

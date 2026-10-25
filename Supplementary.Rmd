@@ -1,0 +1,54 @@
+---
+title: "Supplementary material"
+subtitle: "Body Adiposity Index Outperforms Waist Circumference and Waist-to-Height Ratio in Identifying Dysglycemia Among Hausa Women in Northern Nigeria"
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(flextable)
+library(officer)
+source("Analysis_script.R", local = knitr::knit_global())
+ft <- function(x, width = 6.7, footer = NULL) {
+  if (!inherits(x, "flextable")) x <- flextable(x)
+  if (!is.null(footer)) x <- add_footer_lines(x, footer)
+  x %>% fontsize(size = 8, part = "all") %>% font(fontname = "Times New Roman", part = "all") %>%
+    bold(part = "header") %>% align(j = -1, align = "center", part = "all") %>%
+    padding(padding = 2, part = "all") %>% autofit() %>% fit_to_width(max_width = width)
+}
+```
+
+**Supplementary Table S1.** Pearson correlations of anthropometric indices with HbA1c, with tests of each index against BAI (Meng–Rosenthal–Rubin test for dependent correlations) and between menopausal groups (Fisher z test).
+
+```{r tS1}
+ft(table2, footer = ABBREV)
+```
+
+\newpage
+
+**Supplementary Table S2.** Ten-times repeated five-fold cross-validated performance for continuous HbA1c (mean ± SD across 50 folds). P values are from the Nadeau–Bengio corrected resampled t-test of R² against the three-variable linear model (age, menopausal status and BAI).
+
+```{r tS2}
+ft(tableS1)
+```
+
+**Supplementary Table S3.** LASSO bootstrap selection frequency (500 resamples) and random forest permutation importance (increase in mean squared error when the predictor is permuted).
+
+```{r tS3}
+ft(tableS2, width = 5.5)
+```
+
+\newpage
+
+```{r fS1, fig.width=6, fig.height=3}
+fig2
+```
+
+**Supplementary Figure S1.** Gain in explained variance of HbA1c (ΔR²) when each index is added to a linear model containing age and menopausal status. Error bars show 95% bootstrap confidence intervals. BAI, body adiposity index; WHtR, waist-to-height ratio; WC, waist circumference; HC, hip circumference; NC, neck circumference; BMI, body mass index; WHR, waist-to-hip ratio.
+
+```{r fS2, fig.width=6, fig.height=3.5}
+figS1
+```
+
+**Supplementary Figure S2.** Decision curves for dysglycemia (HbA1c ≥5.7%) comparing logistic models with age and menopausal status alone, and with BAI or WHtR added, against treating all or no women as at risk.

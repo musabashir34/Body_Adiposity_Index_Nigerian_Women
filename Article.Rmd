@@ -1,0 +1,255 @@
+---
+title: "Body Adiposity Index Outperforms Waist Circumference and Waist-to-Height Ratio in Identifying Dysglycemia Among Hausa Women in Northern Nigeria"
+author: 'A. Y. Asuku^a^, M. A. Bashir^a,\*^, J. Muhammed^a^'
+output:
+  bookdown::word_document2:
+    number_sections: true
+    global_numbering: true
+    reference_docx: reference.docx
+bibliography:
+  - mybibfile.bib
+  - new_references.bib
+csl: scientific-african.csl
+---
+
+**[AUTHORS: Scientific African requires each author's full given name(s) and family name, e.g. "Aminu Y. Asuku". Replace the initials above.]**
+
+^a^Department of Anatomy, Bayero University Kano, **[AUTHORS: add faculty and full postal address, e.g. P.M.B. number]**, Kano, Kano State, Nigeria
+
+\*Corresponding author: M. A. Bashir, Department of Anatomy, Bayero University Kano, Kano, Nigeria. Email: [musabashir34\@gmail.com](mailto:musabashir34@gmail.com){.email}; Tel: +2347036878467
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(flextable)
+library(officer)
+
+# All analyses, tables, figures and inline numbers come from this script.
+# It reads clean_data.csv from the project folder. A full run takes about a minute.
+source("Analysis_script.R", local = knitr::knit_global())
+
+# ---- inline formatting helpers ----
+pp  <- function(p) ifelse(p < 0.001, "P < 0.001", paste0("P = ", sprintf("%.3f", p)))
+f1  <- function(x) fmt(x, 1)
+f2  <- function(x) fmt(x, 2)
+f3  <- function(x) fmt(x, 3)
+pct <- function(x) sprintf("%.1f%%", 100 * x)
+
+# ---- table helper: compact, fits the page ----
+ft <- function(x, width = 6.7, footer = NULL) {
+  if (!inherits(x, "flextable")) x <- flextable(x)
+  if (!is.null(footer)) x <- add_footer_lines(x, footer)
+  x %>%
+    fontsize(size = 8, part = "all") %>%
+    font(fontname = "Times New Roman", part = "all") %>%
+    bold(part = "header") %>%
+    align(j = -1, align = "center", part = "all") %>%
+    padding(padding = 2, part = "all") %>%
+    autofit() %>%
+    fit_to_width(max_width = width)
+}
+
+# frequently used values
+n_all  <- nrow(d); n_pre <- nrow(pre); n_post <- nrow(postm)
+dys_n  <- sum(d$dysgly); dm_n <- sum(d$dmr)
+B      <- v_dys("BAI"); W <- v_dys("WHtR"); C <- v_dys("WC")
+Bp     <- v_pre("BAI"); Wp <- v_pre("WHtR"); Cp <- v_pre("WC")
+r_lasso_ml <- range(cv_sum$R2[!cv_sum$model %in% c("Age + status (linear)", "Age + status + BAI (linear)")])
+r_three    <- cv_sum$R2[cv_sum$model == "Age + status + BAI (linear)"]
+```
+
+# Abstract {-}
+
+**Aims**
+
+Waist-based indices are the default anthropometric screen for glycemic risk, but their performance in West African women is uncertain. We compared body adiposity index (BAI) with waist circumference (WC), waist-to-height ratio (WHtR) and four other indices for identifying dysglycemia in Hausa women, and examined whether menopausal status is associated with glycated hemoglobin (HbA1c) independently of age and adiposity.
+
+**Methods**
+
+Cross-sectional study of `r n_all` Hausa women aged ≥35 years without known diabetes in Kano, Nigeria (`r n_pre` premenopausal, `r n_post` postmenopausal). Dysglycemia was defined as HbA1c ≥5.7%. Logistic models adjusted for age and menopausal status were compared by area under the ROC curve (AUC) using paired DeLong tests, and incremental value by gains in AUC, reclassification and explained variance.
+
+**Results**
+
+Dysglycemia was present in `r dys_n` women (`r pct(dys_n / n_all)`). Added to age and menopausal status, BAI gave an AUC of `r f3(B$AUC)` (95% CI `r f3(B$AUC_lo)`–`r f3(B$AUC_hi)`), higher than WHtR (`r f3(W$AUC)`; `r pp(W$p_vs_BAI)`) and WC (`r f3(C$AUC)`; `r pp(C$p_vs_BAI)`). Among premenopausal women, BAI alone (AUC `r f3(Bp$AUC)`) outperformed WHtR (`r f3(Wp$AUC)`; `r pp(Wp$p_vs_BAI)`) and WC (`r f3(Cp$AUC)`; `r pp(Cp$p_vs_BAI)`). No waist-based index improved on a model already containing BAI. BAI was not superior for diabetes-range HbA1c (≥6.5%). Postmenopausal women had HbA1c `r f2(v_stat(4)$beta)` percentage points higher (95% CI `r f2(v_stat(4)$lo)`–`r f2(v_stat(4)$hi)`) after adjustment for age and BAI.
+
+**Conclusions**
+
+BAI, which requires only hip circumference and height, identified dysglycemia better than WC and WHtR in Hausa women. Menopausal status is associated with HbA1c beyond age and adiposity and should be considered alongside anthropometry.
+
+**Keywords**
+
+Body adiposity index; Waist-to-height ratio; Glycated hemoglobin; Prediabetes; Menopause; Anthropometry; Nigeria
+
+# Introduction
+
+Anthropometric indices are widely used to identify adults who should be tested for diabetes, because they are cheap and need no laboratory. Waist-based measures, waist circumference (WC), waist-to-hip ratio (WHR) and waist-to-height ratio (WHtR), are usually preferred, on the reasoning that they track visceral fat more closely than total-body measures [@freedman2012body; @chang2015evaluation]. In African populations, however, the relationship between fat distribution and glycemia differs from that in the European and Asian cohorts on which these recommendations rest, and body mass index (BMI) correlates only weakly with glycemic markers in African women [@sekgala2024clinical; @freedman2012body]. The body adiposity index (BAI), calculated from hip circumference and height without a weighing scale, was developed and validated in Mexican-American and African-American adults [@Bergman2012], but has rarely been compared with waist-based indices against glycemic outcomes in West African women.
+
+Menopause adds a further complication. Declining estrogen shifts fat from gluteofemoral to abdominal depots and is accompanied by increased insulin resistance [@lovejoy2008increased; @varlamov2015sex], so the best anthropometric marker of glycemic risk might differ before and after menopause [@juppi2022total]. Because menopause and chronological age are closely linked, separating their contributions to glycemia also requires explicit analysis rather than simple adjustment.
+
+Hausa women in Kano, northern Nigeria, belong to one of West Africa's largest ethnic groups and have a high prevalence of central adiposity [@bashir2022prevalence]. Where abdominal fat is uniformly high, waist-based indices may discriminate poorly between women at higher and lower glycemic risk. Glycated hemoglobin (HbA1c) reflects average glycemia over two to three months, needs no fasting, and has accepted cut-offs for prediabetes and diabetes [@ada2026diagnosis], making it a practical outcome for evaluating screening markers.
+
+This study had three aims: (1) to compare the ability of BAI, WC, WHtR, hip circumference (HC), neck circumference (NC), BMI and WHR to identify dysglycemia (HbA1c ≥5.7%), and specifically whether BAI outperforms the waist-based indices; (2) to quantify the information each index adds beyond age and menopausal status; and (3) to examine whether menopausal status is associated with HbA1c independently of age and adiposity, and whether the index–HbA1c association differs by menopausal status.
+
+# Methods
+
+## Study design, setting and participants
+
+This cross-sectional study was conducted at Murtala Muhammad Teaching Hospital (MMSHZ//GEN/0831/I) and Muhammad Abdullahi Wase Teaching Hospital (MAWTH/HMB/GEN/456/I), Kano, Nigeria. Ethical approval was obtained from both institutions and the Kano State Ministry of Health (NHREC/17/03/2018), and all participants gave written informed consent. The study was conducted in accordance with the Declaration of Helsinki. **[AUTHORS: state the recruitment period, the clinics or departments from which pre- and postmenopausal women were recruited, how they were approached (consecutive or convenience), and the number approached, eligible and declining. Reviewers will ask whether the two groups came from the same source.]**
+
+Hausa women aged ≥35 years were eligible. Women were classified as postmenopausal after ≥12 consecutive months of amenorrhea not attributable to another cause, and otherwise as premenopausal; perimenopausal women were not separately identified. All participants were female; because men were not studied, the findings apply to women only. Women with known diabetes, current hormone replacement therapy, pregnancy, or a hematological condition affecting HbA1c measurement were excluded. **[AUTHORS: state how hematological conditions were ascertained, e.g. self-report, hemoglobin measurement, or HPLC variant flags.]** The analytic sample comprised `r n_all` women (`r n_pre` premenopausal, `r n_post` postmenopausal) with complete data.
+
+## Measurements
+
+Height, weight, WC, HC and NC were measured by trained staff. WC was measured midway between the lowest rib and the iliac crest, HC at the widest circumference over the greater trochanters, and NC just below the thyroid cartilage with the head in the Frankfurt plane [@isak2019standards]. BMI, WHR, WHtR and BAI were calculated from these measurements, with BAI defined as in Eq. (1) [@Bergman2012]:
+
+BAI = HC (cm) / height (m)^1.5^ − 18          (1)
+
+HbA1c was measured by ion-exchange high-performance liquid chromatography (HPLC).
+
+## Outcomes
+
+The primary outcome was dysglycemia, defined as HbA1c ≥5.7%, the American Diabetes Association threshold for prediabetes, which therefore also includes women in the diabetes range [@ada2026diagnosis]. Secondary outcomes were diabetes-range HbA1c (≥6.5%) and HbA1c as a continuous variable.
+
+## Statistical analysis
+
+Characteristics were summarized as mean ± SD or n (%) and compared between menopausal groups with Welch's t-test or the χ² test. Pearson correlations between each index and HbA1c were calculated overall and within each group. Whether BAI correlated more strongly with HbA1c than each other index was tested with the Meng–Rosenthal–Rubin test for dependent correlations [@meng1992comparing], and whether a correlation differed between pre- and postmenopausal women was tested with Fisher's z test.
+
+*Discrimination of dysglycemia (primary analysis).* For each index, a logistic regression of dysglycemia on age, menopausal status and the standardized index was fitted, and its AUC was compared with that of the age-plus-status model and with that of the corresponding BAI model using the paired DeLong test [@delong1988comparing]. Reclassification was summarized by the category-free net reclassification improvement (NRI) and the integrated discrimination improvement (IDI) [@pencina2008evaluating; @pencina2011extensions]. Optimism in the AUC was estimated with `r N_OPT` bootstrap resamples [@harrell1996multivariable]. Because few postmenopausal women had normal HbA1c (`r sum(postm$dysgly == 0)` of `r n_post`), unadjusted index-alone AUCs were compared within the premenopausal group for dysglycemia and within the postmenopausal group for diabetes-range HbA1c. Optimal cut-offs were identified with Youden's index [@youden1950index]. Clinical usefulness was assessed with decision-curve analysis [@vickers2006decision].
+
+*Incremental information for continuous HbA1c.* Linear regression models of HbA1c on age and menopausal status were extended with each standardized index, and the gain in R² (ΔR²) was estimated with `r N_BOOT`-replicate bootstrap 95% confidence intervals. We tested whether each index added information to a model already containing BAI, and whether BAI added information to a model containing each other index. Effect modification by menopausal status was tested with index × status interaction terms.
+
+*Menopausal status, age and adiposity.* Because age and menopausal status are strongly related, the association between status and HbA1c was estimated with adjustment for age as a linear term and as a natural cubic spline (3 df), and additionally for BAI and NC. Collinearity was assessed with the variance inflation factor. As a sensitivity analysis, the model was refitted in the subsample in which the two groups overlapped in age (45–55 years). Within-group associations of age with HbA1c were also estimated.
+
+*Supplementary analyses.* To check whether non-linear or penalized models offered any advantage, linear regression with all predictors, LASSO, random forest and support vector regression (radial basis kernel) were compared with the three-variable linear model (age, status, BAI) using `r CV_REPEATS` repeats of `r CV_FOLDS`-fold cross-validation, with all preprocessing and tuning performed within training folds. Differences in cross-validated R² were tested with the Nadeau–Bengio corrected resampled t-test [@nadeau2003inference]. Because LASSO selection among correlated predictors is unstable, selection frequencies were estimated over `r N_LASSO` bootstrap resamples [@meinshausen2010stability], and random forest variable importance was estimated by permutation rather than impurity reduction [@strobl2007bias].
+
+Two-sided P < 0.05 was considered statistically significant. Analyses were performed in R version `r paste(R.version$major, R.version$minor, sep = ".")` using tidyverse `r packageVersion("tidyverse")` [@R-tidyverse], pROC `r packageVersion("pROC")` [@robin2011proc], glmnet `r packageVersion("glmnet")` [@R-glmnet], ranger `r packageVersion("ranger")` [@R-ranger], kernlab `r packageVersion("kernlab")` [@R-kernlab], flextable `r packageVersion("flextable")` [@R-flextable] and patchwork `r packageVersion("patchwork")` [@R-patchwork].
+
+# Results
+
+## Participant characteristics
+
+Postmenopausal women were older than premenopausal women (`r msd(postm$Age, 1)` vs `r msd(pre$Age, 1)` years) and had higher BMI, WC, HC, NC, WHR, WHtR and BAI, but did not differ in weight (Table \@ref(tab:table1)). Mean HbA1c was `r msd(postm$HbA1c)`% in postmenopausal and `r msd(pre$HbA1c)`% in premenopausal women. Dysglycemia was present in `r dys_n` women (`r pct(dys_n / n_all)`): `r sum(pre$dysgly)` premenopausal (`r pct(mean(pre$dysgly))`) and `r sum(postm$dysgly)` postmenopausal (`r pct(mean(postm$dysgly))`). Diabetes-range HbA1c was found in `r dm_n` women (`r pct(dm_n / n_all)`), none of whom had a prior diagnosis.
+
+```{r table1, tab.cap="Characteristics of participants by menopausal status"}
+ft(table1)
+```
+
+## Correlations with HbA1c
+
+In the whole sample, BAI correlated more strongly with HbA1c (r = `r f2(v_corr("All","BAI")$r)`) than every other index, including WHtR (r = `r f2(v_corr("All","WHtR")$r)`; `r pp(v_corr("All","WHtR")$p_vs_BAI)`) and WC (r = `r f2(v_corr("All","WC")$r)`; `r pp(v_corr("All","WC")$p_vs_BAI)`) (Supplementary Table S1). Within groups, BAI had the numerically largest correlation in both premenopausal (r = `r f2(v_corr("Premenopausal","BAI")$r)`) and postmenopausal women (r = `r f2(v_corr("Postmenopausal","BAI")$r)`). The difference from WC was significant in postmenopausal women (`r pp(v_corr("Postmenopausal","WC")$p_vs_BAI)`), but within either group BAI's correlation did not differ significantly from that of WHtR. No index–HbA1c correlation differed significantly between pre- and postmenopausal women (all Fisher z P > `r f2(floor(min(fisher_res$p) * 100) / 100)`).
+
+## Discrimination of dysglycemia
+
+Age and menopausal status alone gave an AUC of `r f3(B$AUC_base)` for dysglycemia. Adding BAI increased the AUC to `r f3(B$AUC)` (95% CI `r f3(B$AUC_lo)`–`r f3(B$AUC_hi)`; `r pp(B$p_vs_base)`), with an odds ratio of `r f2(B$OR)` (`r f2(B$OR_lo)`–`r f2(B$OR_hi)`) per SD of BAI (Table \@ref(tab:table-auc), Figure \@ref(fig:fig-roc)A). The BAI model discriminated significantly better than the corresponding models with WHtR (AUC `r f3(W$AUC)`; `r pp(W$p_vs_BAI)`), WC (`r f3(C$AUC)`; `r pp(C$p_vs_BAI)`), NC (`r f3(v_dys("NC")$AUC)`; `r pp(v_dys("NC")$p_vs_BAI)`), BMI and WHR, and borderline better than HC (`r f3(v_dys("HC")$AUC)`; `r pp(v_dys("HC")$p_vs_BAI)`). Reclassification gains were also largest for BAI (NRI `r f2(B$NRI)`, IDI `r f3(B$IDI)`; WHtR: NRI `r f2(W$NRI)`, IDI `r f3(W$IDI)`; WC: NRI `r f2(C$NRI)`, IDI `r f3(C$IDI)`). After bootstrap optimism correction, AUCs were `r f3(v_opt("dysgly","Age + status + BAI")$corrected)` for the BAI model, `r f3(v_opt("dysgly","Age + status + WHtR")$corrected)` for WHtR, `r f3(v_opt("dysgly","Age + status + WC")$corrected)` for WC and `r f3(v_opt("dysgly","Age + status")$corrected)` for age and status alone.
+
+Among premenopausal women, BAI alone discriminated dysglycemia with an AUC of `r f3(Bp$AUC)` (`r f3(Bp$lo)`–`r f3(Bp$hi)`), significantly higher than every other index, including WHtR (`r f3(Wp$AUC)`; `r pp(Wp$p_vs_BAI)`) and WC (`r f3(Cp$AUC)`; `r pp(Cp$p_vs_BAI)`) (Figure \@ref(fig:fig-roc)B). The optimal BAI cut-off in this group was `r f1(Bp$cut)`, with sensitivity `r pct(Bp$sens)` and specificity `r pct(Bp$spec)`.
+
+For diabetes-range HbA1c (≥6.5%), BAI did not discriminate significantly better than the waist-based indices. The adjusted AUC was `r f3(v_dm("BAI")$AUC)` with BAI, `r f3(v_dm("WHtR")$AUC)` with WHtR (`r pp(v_dm("WHtR")$p_vs_BAI)`) and `r f3(v_dm("WC")$AUC)` with WC (`r pp(v_dm("WC")$p_vs_BAI)`). Among postmenopausal women, index-alone AUCs ranged from `r f3(min(auc_post_dm$AUC))` to `r f3(max(auc_post_dm$AUC))`, and none differed significantly from BAI.
+
+In decision-curve analysis for dysglycemia (Supplementary Figure S2), no model improved on treating all women as at risk below threshold probabilities of about 0.25, reflecting the high prevalence. Between thresholds of about 0.30 and 0.80, the BAI model gave a higher net benefit than both the age-and-status model and the WHtR model.
+
+```{r table-auc, tab.cap="Discrimination of dysglycemia (HbA1c ≥5.7%) and diabetes-range HbA1c (≥6.5%). Whole-sample models include age and menopausal status; P values compare each model's AUC with that of the BAI model (paired DeLong test)"}
+tb <- setNames(table4, c("Index", "OR", "AUC1", "P1", "AUC2", "P2", "AUC3", "P3"))
+flextable(tb) %>%
+  set_header_labels(Index = "Index", OR = "OR per SD (95% CI)", AUC1 = "AUC (95% CI)", P1 = "P vs BAI",
+                    AUC2 = "AUC (95% CI)", P2 = "P vs BAI", AUC3 = "AUC (95% CI)", P3 = "P vs BAI") %>%
+  add_header_row(values = c("", "Dysglycemia, all women*", "Diabetes range, all women*", "Dysglycemia, premenopausal†"),
+                 colwidths = c(1, 3, 2, 2)) %>%
+  ft(footer = c(paste0("*Logistic models with age, menopausal status and the standardized index; AUC of age and status alone: dysglycemia ",
+                       f3(B$AUC_base), ", diabetes range ", f3(v_dm("BAI")$AUC_base),
+                       ". †Index alone, unadjusted. P values from paired DeLong tests against BAI."),
+                ABBREV))
+```
+
+```{r fig-roc, fig.width=8, fig.height=4.3, fig.cap="Receiver operating characteristic curves for dysglycemia (HbA1c ≥5.7%). (A) All women, logistic models containing age, menopausal status and one index; grey line, age and status only. (B) Premenopausal women, each index alone. AUC, area under the curve; BAI, body adiposity index; WHtR, waist-to-height ratio; WC, waist circumference; HC, hip circumference; NC, neck circumference."}
+fig3
+```
+
+## Incremental information for continuous HbA1c
+
+Age and menopausal status explained `r pct(summary(m_base)$r.squared)` of the variance in HbA1c. BAI added the most (ΔR² `r f3(v_inc("BAI")$dR2)`, 95% CI `r f3(v_inc("BAI")$dR2_lo)`–`r f3(v_inc("BAI")$dR2_hi)`), followed by WHtR (`r f3(v_inc("WHtR")$dR2)`), HC (`r f3(v_inc("HC")$dR2)`), WC (`r f3(v_inc("WC")$dR2)`) and NC (`r f3(v_inc("NC")$dR2)`). WHR added nothing (Table \@ref(tab:table-inc); Supplementary Figure S1). Once BAI was in the model, none of WHtR, WC, HC, BMI or WHR added further information (all ΔR² ≤ `r f3(max(beyond_bai$dR2_index_given_BAI[beyond_bai$index != "NC"]))`, all P > 0.2). NC added a small amount (ΔR² `r f3(beyond_bai$dR2_index_given_BAI[beyond_bai$index == "NC"])`; `r pp(beyond_bai$p_index_given_BAI[beyond_bai$index == "NC"])`). Conversely, BAI added significant information to models containing each of the other indices (all P < 0.001). No index × menopausal status interaction was significant (smallest P = `r f3(min(inc_res$p_int))`, for NC).
+
+```{r table-inc, tab.cap="Association of each standardized index with HbA1c, adjusted for age and menopausal status, and the information each adds beyond age and status and beyond BAI"}
+ft(table3, footer = ABBREV)
+```
+
+## Menopausal status, age and HbA1c
+
+Within each group, HbA1c showed no association with age: the slope was `r f2(age_slopes$slope10[1])` (95% CI `r f2(age_slopes$lo[1])` to `r f2(age_slopes$hi[1])`) percentage points per 10 years in premenopausal and `r f2(age_slopes$slope10[2])` (`r f2(age_slopes$lo[2])` to `r f2(age_slopes$hi[2])`) in postmenopausal women (Figure \@ref(fig:fig-age)). The higher HbA1c of postmenopausal women persisted after adjustment for age, whether modeled linearly or with a spline (Table \@ref(tab:table-status)). It was attenuated by about a third, but remained substantial, after further adjustment for BAI (`r f2(v_stat(4)$beta)` percentage points, 95% CI `r f2(v_stat(4)$lo)`–`r f2(v_stat(4)$hi)`). The variance inflation factor for menopausal status was `r f1(vif_post)`. In the `r sum(ov_n)` women aged 45–55 years, where the groups overlapped in age (`r ov_n[["Premenopausal"]]` premenopausal, `r ov_n[["Postmenopausal"]]` postmenopausal), the adjusted difference was `r f2(v_stat(6)$beta)` (`r f2(v_stat(6)$lo)`–`r f2(v_stat(6)$hi)`; `r pp(v_stat(6)$p)`).
+
+```{r table-status, tab.cap="Difference in HbA1c between postmenopausal and premenopausal women under increasing adjustment"}
+ft(table5)
+```
+
+```{r fig-age, fig.width=6, fig.height=3.8, fig.cap="HbA1c by age and menopausal status, with within-group linear fits and 95% confidence bands. Dashed lines mark HbA1c 5.7% and 6.5%; the shaded band marks the age range (45–55 years) in which the two groups overlap."}
+fig1
+```
+
+## Supplementary analyses
+
+With repeated cross-validation, the three-variable linear model (age, status and BAI) explained `r pct(r_three)` of the variance in HbA1c. Linear regression with all predictors, LASSO, random forest and support vector regression explained `r pct(r_lasso_ml[1])`–`r pct(r_lasso_ml[2])`, and none differed significantly from the three-variable model (Supplementary Table S2). Across bootstrap resamples, LASSO selected menopausal status, BAI and NC in ≥`r floor(min(lasso_freq[c("post","BAI","NC")]))`% of resamples, and each waist-based index in ≤`r ceiling(max(lasso_freq[c("WC","WHtR","WHR")]))`%. BAI had the highest random forest permutation importance (Supplementary Table S3).
+
+# Discussion
+
+In this cross-sectional study of Hausa women without known diabetes, BAI identified dysglycemia better than WC and WHtR. This held in the whole sample after adjustment for age and menopausal status, and among premenopausal women using each index alone. BAI also carried the most information on HbA1c as a continuous measure, and no waist-based index added to a model already containing BAI. The advantage did not extend to diabetes-range HbA1c, where BAI and WHtR performed similarly. Independently of these findings, postmenopausal women had substantially higher HbA1c than premenopausal women, and this difference was not explained by age or adiposity.
+
+## BAI compared with waist-based indices
+
+Our findings run against the common recommendation of waist-based indices for metabolic screening, and against studies in Chinese, Iranian and South African populations and a mixed-sex Hausa cohort, in which BAI performed worse than waist-based indices [@chang2015evaluation; @ramezani2026novel; @sekgala2024clinical; @yusuf2023predictability]. Several explanations are plausible. First, when central adiposity is common and fairly uniform, as in this population [@bashir2022prevalence], waist measures may vary too little between women to separate those with and without dysglycemia. Second, BAI expresses hip size relative to stature. In a post-hoc model adjusted for age and status, larger HC (`r pp(hcht['HC_z',4])`) and shorter stature (`r pp(hcht['Ht_z',4])`) were each independently associated with higher HbA1c. BAI combines the two, which waist measures do not, and both components may matter in this population. Third, differences between studies in the glycemic outcome, sex composition and analytic approach may contribute; here indices were compared with formal tests for correlated AUCs rather than by inspection of their magnitudes.
+
+The advantage of BAI was confined to the lower, prediabetes threshold. For diabetes-range HbA1c, BAI and WHtR discriminated similarly, so our data do not support preferring BAI over WHtR for detecting diabetes itself. The strongest single result was in premenopausal women, among whom BAI alone discriminated dysglycemia better than every other index. This is the group in which early detection allows the most time for prevention. The cut-off of about `r round(Bp$cut)` identified in this group is data-derived and should be validated before clinical use.
+
+## Neck circumference
+
+NC was the only index that added information beyond BAI, and it was retained in nearly all bootstrap LASSO models. The gain was small (ΔR² `r f3(beyond_bai$dR2_index_given_BAI[beyond_bai$index == "NC"])`) but consistent with reports linking upper-body subcutaneous fat to insulin resistance independently of abdominal fat [@li2023association; @pandey2024study; @zuo2026association]. Whether a combined BAI–NC score improves screening should be tested in an independent sample.
+
+## Menopausal status
+
+The difference in HbA1c between groups behaved as a step at menopause rather than a gradual age effect. HbA1c was unrelated to age within each group, and the difference persisted with flexible adjustment for age and in the age-overlap subsample. Adjustment for BAI explained about a third of the difference, consistent with menopause-related fat redistribution [@lovejoy2008increased]. The remainder may reflect direct effects of estrogen loss on insulin sensitivity and hepatic glucose output [@varlamov2015sex], which our data cannot test. The size of the residual difference, about `r f1(v_stat(4)$beta)` percentage points, is larger than usually reported, and the overlap subsample was small. Selection differences between the two groups therefore cannot be excluded and should be examined in population-based samples. Regardless of mechanism, menopausal status should be recorded alongside anthropometry when assessing glycemic risk in women. The association of each index with HbA1c did not differ by menopausal status, so we found no evidence that the best anthropometric marker changes across menopause.
+
+## Modeling approach
+
+Penalized and non-linear models offered no advantage over a linear model containing age, status and BAI. The adiposity–HbA1c relationship in these data is therefore adequately described as linear, and simple, transparent scores are preferable to algorithmic models for field use.
+
+## Strengths and limitations
+
+Strengths include a well-characterized, understudied population, direct comparison of seven indices with formal tests for correlated correlations and AUCs, evaluation of incremental rather than standalone value, and checks of internal validity by bootstrap and repeated cross-validation. The study also has limitations. The cross-sectional design precludes causal inference and cannot show how the index–HbA1c association changes within women as they pass through menopause; perimenopausal women were not separately classified. Participants were recruited in hospitals, and results may not generalize to the community or to men. Because `r pct(mean(postm$dysgly))` of postmenopausal women were dysglycemic, discrimination of dysglycemia could not be evaluated within that group. Dysglycemia was defined by HbA1c alone, without fasting glucose or an oral glucose tolerance test. HbA1c can be affected by iron-deficiency anemia and hemoglobin variants, both common in Nigeria [@english2015effect; @little2009review]. Diet, physical activity, parity and socioeconomic status were not measured. All results are internally validated only and require confirmation in an independent cohort.
+
+# Conclusion
+
+In Hausa women, BAI identified dysglycemia better than waist circumference and waist-to-height ratio, added more information on HbA1c than any other index, and made the waist-based indices redundant. Its advantage was clearest among premenopausal women and at the prediabetes threshold, not the diabetes threshold. Menopausal status was associated with markedly higher HbA1c independently of age and adiposity. BAI needs only a tape measure and a stadiometer and is a promising first-line anthropometric screen for dysglycemia in this population, to be used together with age and menopausal status and pending external validation.
+
+# Implications
+
+Women of African descent are underrepresented in studies of anthropometric screening. Because BAI needs no weighing scale, community health workers could use it in primary care and resource-limited settings to decide which women to refer for HbA1c or glucose testing. Before this can be recommended, the BAI cut-off reported here, and a possible combined BAI–neck circumference score, should be validated prospectively in community samples and in other West African ethnic groups, with outcomes confirmed by glucose testing.
+
+# CRediT authorship contribution statement {-}
+
+**[AUTHORS: assign roles for each author, for example:]** **A. Y. Asuku:** Investigation, Data curation, Writing – original draft. **M. A. Bashir:** Conceptualization, Methodology, Formal analysis, Writing – review & editing, Supervision. **J. Muhammed:** Investigation, Resources, Writing – review & editing.
+
+# Funding {-}
+
+**[AUTHORS: confirm or replace]** This research did not receive any specific grant from funding agencies in the public, commercial, or not-for-profit sectors.
+
+# Declaration of competing interest {-}
+
+**[AUTHORS: confirm]** The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+# Data availability {-}
+
+The de-identified dataset and R code used to generate the analyses and results reported in this article are openly available in the GitHub repository "Body_Adiposity_Index_Nigerian_Women" at https://github.com/musabashir34/Body_Adiposity_Index_Nigerian_Women. Participant identifiers were removed prior to deposit, and no additional restrictions apply to data access.
+
+# Supplementary material {-}
+
+Supplementary Tables S1–S3 and Supplementary Figures S1–S2 are provided in a separate file.
+
+# Declaration of generative AI and AI-assisted technologies in the manuscript preparation process {-}
+
+During the preparation of this work the authors used Claude (Anthropic) to assist with writing the statistical analysis code, revising the manuscript text and preparing the graphical abstract. After using this tool, the authors reviewed and edited the content as needed and take full responsibility for the content of the published article.
+
+# Acknowledgements {-}
+
+**[AUTHORS: thank the participants and hospital staff, or delete this section.]**
+
+# References {-}
+
+<div id="refs"></div>
